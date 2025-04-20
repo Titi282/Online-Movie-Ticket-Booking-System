@@ -1,0 +1,541 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket Booking</title>
+  <!-- <link rel="stylesheet" type="text/css" href="{% static 'css/style-starter.css' %}"> -->
+  <link rel="stylesheet" href="https://npmcdn.com/flickity@2/dist/flickity.css">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/progress.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/ticket-booking.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/e-ticket.css' %}">
+  <link rel="stylesheet" type="text/css" href="{% static 'css/payment.css' %}">
+  <link href="https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style-starter.css' %}">
+  <link href="//fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,600;0,700;1,600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" type="text/css"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="https://npmcdn.com/flickity@2/dist/flickity.min.css">
+  <script src="https://npmcdn.com/flickity@2/dist/flickity.pkgd.js"></script>
+
+
+</head>
+
+<body>
+  <header id="site-header" class="w3l-header fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-light fill px-lg-0 py-0 px-3">
+      <div class="container">
+        <h1><a class="navbar-brand" href="{% url 'home' %}"><span class="fa fa-film icon-log" aria-hidden="true"></span>
+            Fimji </a></h1>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent"></div>
+        <div class="Login_SignUp" id="login_s">
+          <a class="nav-link" href="{% url 'login' %}"><i class="fa fa-user-circle-o"></i></a>
+        </div>
+        <div class="mobile-position">
+          <nav class="navigation">
+            <div class="theme-switch-wrapper">
+              <label class="theme-switch" for="checkbox">
+                <input type="checkbox" id="checkbox">
+                <div class="mode-container">
+                  <i class="gg-sun"></i>
+                  <i class="gg-moon"></i>
+                </div>
+              </label>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="container" id="progress-container-id">
+    <div class="row">
+      <div class="col">
+        <div class="px-0 pt-4 pb-0 mt-3 mb-3">
+          <form id="form">
+            <ul id="progressbar" class="progressbar-class">
+              <li class="active" id="step1">Show timing selection</li>
+              <li id="step2" class="not_active">Seat Selection</li>
+              <li id="step3" class="not_active">Payment</li>
+              <li id="step4" class="not_active">E-Ticket</li>
+            </ul>
+            <br>
+            <fieldset>
+              <div id="screen-select-div">
+                <h2>Show time Selection</h2>
+                <!-- <div class="date-selector"> -->
+                <div class="carousel carousel-nav" data-flickity='{"contain": true, "pageDots": false }'>
+                  {% if days %}
+                  {% for day in days %}
+                  <div class="carousel-cell {% if day.iso_date == selected_date %}selected{% endif %}"
+                    id="day-{{ day.id }}" data-date="{{ day.iso_date }}"
+                    onclick="selectDay('{{ day.iso_date }}', '{{ day.id }}')">
+                    <div class="date-numeric">{{ day.numeric }}</div>
+                    <div class="date-day">{{ day.day_name }}</div>
+                  </div>
+                  {% endfor %}
+                  {% else %}
+                  <div class="carousel-cell">
+                    <div class="date-numeric">No days available</div>
+                    <div class="date-day">Please try again later</div>
+                  </div>
+                  {% endif %}
+                </div>
+              
+
+                <ul class="time-ul" id="showtimes-list">
+                  {% if showtimes_by_room %}
+                  {% for room, showtimes in showtimes_by_room.items %}
+                  <li class="time-li" id="room-{{ room.id }}">
+                    <div class="screens">Room {{ room.room_number }}</div>
+                    <div class="time-btn">
+                      {% for showtime in showtimes %}
+                      <button type="button" class="screen-time" id="showtime-{{ showtime.id }}"
+                        onclick="selectShowtime('{{ showtime.id }}')">
+                        {{ showtime.start_time|time:"H:i A" }}
+                      </button>
+                      {% endfor %}
+                    </div>
+                  </li>
+                  {% endfor %}
+                  {% else %}
+                  <li class="time-li">
+                    <div class="screens">No showtimes available for {{ selected_date|date:"d/m/Y" }}</div>
+                    <div class="time-btn">
+                      <button class="screen-time" disabled>No times</button>
+                    </div>
+                  </li>
+                  {% endif %}
+                </ul>
+              </div>
+              <input id="screen-next-btn" type="button" name="next-step" class="next-step" value="Continue Booking"
+                disabled />
+                <input type="button" name="previous-step" class="cancel-pay-btn" value="Back" onclick="window.location.href='{% url 'home' %}'" />
+
+            </fieldset>
+            <fieldset>
+              <!-- Seat Selection Step (using iframe) -->
+              <h2>Seat Booking</h2>
+              <div>
+                <iframe id="seat-sel-iframe"
+                  style="box-shadow: 0 14px 12px 0 var(--theme-border), 0 10px 50px 0 var(--theme-border); 
+                         width: 1000px; 
+                         height: 600px; 
+                         display: block; 
+                         margin-left: auto; 
+                         margin-right: auto; 
+                         border: none;"
+                  {% if showtime_id %}
+                  src="{% url 'seat_sel' showtime_id %}"
+                  {% else %}
+                  src="about:blank"
+                  {% endif %}
+                  ></iframe>
+              </div>
+              <br>
+              <input type="button" name="next-step" class="next-step" value="Proceed to Payment" />
+              <input type="button" name="previous-step" class="previous-step" value="Back" />
+            </fieldset>
+            <fieldset>
+              <!-- Payment Page -->
+              <div id="payment_div">
+                <div class="payment-row">
+                  <div class="col-75">
+                    <div class="payment-container">
+                      <div class="payment-row">
+                        <div class="col-50">
+                          <h3 id="payment-h3">Payment</h3>
+                          <div class="payment-row payment">
+                            <div class="col-50 payment">
+                              <label for="card" class="method card">
+                                <div class="icon-container">
+                                  <i class="fa fa-cc-visa" style="color: navy"></i>
+                                  <i class="fa fa-cc-amex" style="color: blue"></i>
+                                  <i class="fa fa-cc-mastercard" style="color: red"></i>
+                                  <i class="fa fa-cc-discover" style="color: orange"></i>
+                                </div>
+                                <div class="radio-input">
+                                  <input type="radio" id="card" />
+                                  Pay RS.200.00 with credit card
+                                </div>
+                              </label>
+                            </div>
+                            <div class="col-50 payment">
+                              <label for="paypal" class="method paypal">
+                                <div class="icon-container">
+                                  <i class="fa fa-paypal" style="color: navy"></i>
+                                </div>
+                                <div class="radio-input">
+                                  <input id="paypal" type="radio" checked>
+                                  Pay $30.00 with PayPal
+                                </div>
+                              </label>
+                            </div>
+                          </div>
+                          <div class="payment-row">
+                            <div class="col-50">
+                              <label for="cname">Cardholder's Name</label>
+                              <input type="text" id="cname" name="cardname" placeholder="Firstname Lastname" required />
+                            </div>
+                            <div class="col-50">
+                              <label for="ccnum">Credit card number</label>
+                              <input type="text" id="ccnum" name="cardnumber" placeholder="xxxx-xxxx-xxxx-xxxx"
+                                required />
+                            </div>
+                          </div>
+                          <div class="payment-row">
+                            <div class="col-50">
+                              <label for="expmonth">Exp Month</label>
+                              <input type="text" id="expmonth" name="expmonth" placeholder="September" required />
+                            </div>
+                            <div class="col-50">
+                              <div class="payment-row">
+                                <div class="col-50">
+                                  <label for="expyear">Exp Year</label>
+                                  <input type="text" id="expyear" name="expyear" placeholder="yyyy" required />
+                                </div>
+                                <div class="col-50">
+                                  <label for="cvv">CVV</label>
+                                  <input type="text" id="cvv" name="cvv" placeholder="xxx" required />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <input type="button" name="next-step" class="next-step pay-btn" value="Confirm Payment" />
+              <input type="button" name="previous-step" class="previous-step" value="Cancel Payment" />
+            </fieldset>
+            <fieldset>
+              <h2>E-Ticket</h2>
+              <div class="ticket-body">
+                <div class="ticket">
+                  <div class="holes-top"></div>
+                  <div class="title">
+                    <p class="cinema">MyShowz Entertainment</p>
+                    <p class="movie-title">Movie Name</p>
+                  </div>
+                  <div class="poster">
+                    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/25240/only-god-forgives.jpg"
+                      alt="Movie: Only God Forgives" />
+                  </div>
+                  <div class="info">
+                    <table class="info-table ticket-table">
+                      <tr>
+                        <th>SCREEN</th>
+                        <th>ROW</th>
+                        <th>SEAT</th>
+                      </tr>
+                      <tr>
+                        <td class="bigger">18</td>
+                        <td class="bigger">H</td>
+                        <td class="bigger">24</td>
+                      </tr>
+                    </table>
+                    <table class="info-table ticket-table">
+                      <tr>
+                        <th>PRICE</th>
+                        <th>DATE</th>
+                        <th>TIME</th>
+                      </tr>
+                      <tr>
+                        <td>RS.12.00</td>
+                        <td>4/13/21</td>
+                        <td>19:30</td>
+                      </tr>
+                    </table>
+                  </div>
+                  <div class="holes-lower"></div>
+                  <div class="serial">
+                    <table class="barcode ticket-table">
+                      <tr>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:white;"></td>
+                        <td style="background-color:black;"></td>
+                        <td style="background-color:black;"></td>
+                      </tr>
+                    </table>
+                    <table class="numbers ticket-table">
+                      <tr>
+                        <td>9</td>
+                        <td>1</td>
+                        <td>7</td>
+                        <td>3</td>
+                        <td>7</td>
+                        <td>5</td>
+                        <td>4</td>
+                        <td>4</td>
+                        <td>4</td>
+                        <td>5</td>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>4</td>
+                        <td>7</td>
+                        <td>8</td>
+                        <td>7</td>
+                        <td>3</td>
+                        <td>4</td>
+                        <td>1</td>
+                        <td>4</td>
+                        <td>5</td>
+                        <td>2</td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <input type="button" name="previous-step" class="home-page-btn" value="Browse to Home Page"
+                onclick="location.href='{% url "home" %}';" />
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+   // Global variables
+let selectedShowtimeId = null;
+let prevId = null; // To track currently selected day
+
+// Function to update the state of the Continue Booking button
+function updateContinueButton() {
+    const continueButton = document.getElementById('screen-next-btn');
+    continueButton.disabled = !selectedShowtimeId; // Disable if no showtime selected
+}
+
+// Function to handle day selection
+function selectDay(date, id) {
+    console.log(`Selected date: ${date}, id: ${id}`);
+
+    // Apply color change as in original script
+    if (prevId) {
+        const prevElement = document.getElementById(`day-${prevId}`);
+        if (prevElement) {
+            prevElement.style.background = "rgb(243, 235, 235)";
+            prevElement.classList.remove('selected');
+        }
+    }
+
+    // Set new selected day color
+    const currentElement = document.getElementById(`day-${id}`);
+    if (currentElement) {
+        currentElement.style.background = "#df0e62";
+        currentElement.classList.add('selected');
+    }
+
+    // Update current selection
+    prevId = id;
+
+    // Update URL and make AJAX request
+    const url = new URL(window.location.href);
+    url.searchParams.set("date", date);
+
+    // Use History API to update URL without reloading
+    window.history.pushState({}, '', url.toString());
+
+    // Make AJAX request to get showtimes for selected date
+    fetch(`?date=${date}&ajax=true`)
+        .then(response => response.text())
+        .then(html => {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            const newShowtimeList = tempDiv.querySelector('#showtimes-list');
+            if (newShowtimeList) {
+                document.getElementById('showtimes-list').innerHTML = newShowtimeList.innerHTML;
+            }
+
+            // Reset selected showtime and update button state
+            selectedShowtimeId = null;
+            updateContinueButton();
+
+            // Reattach event listeners to new showtime buttons
+            const showtimeButtons = document.querySelectorAll('.screen-time');
+            showtimeButtons.forEach(button => {
+                if (!button.disabled) {
+                    const showtimeId = button.id.replace('showtime-', '');
+                    button.addEventListener('click', () => selectShowtime(showtimeId));
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching showtimes:', error);
+            window.location.href = url.toString();
+        });
+}
+
+// Function to handle showtime selection
+function selectShowtime(showtimeId) {
+    console.log(`Selected showtime: ${showtimeId}`);
+
+    // Clear previous selection
+    const allShowtimeButtons = document.querySelectorAll('.screen-time');
+    allShowtimeButtons.forEach(button => {
+        button.classList.remove('selected');
+    });
+
+    // Update selection
+    selectedShowtimeId = showtimeId;
+    const button = document.getElementById(`showtime-${showtimeId}`);
+    if (button) {
+        button.classList.add('selected');
+    }
+
+    // Update button state
+    updateContinueButton();
+
+    // Update iframe src
+    const iframe = document.getElementById('seat-sel-iframe');
+    if (iframe) {
+        iframe.src = `{% url 'seat_sel' 0 %}`.replace('0', showtimeId);
+    }
+
+    // Store selected showtime ID in form hidden field
+    const form = document.querySelector('form');
+    let hiddenInput = document.getElementById('selected-showtime');
+
+    if (!hiddenInput) {
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.id = 'selected-showtime';
+        hiddenInput.name = 'showtime_id';
+        form.appendChild(hiddenInput);
+    }
+
+    hiddenInput.value = showtimeId;
+}
+
+// Initialize on document load
+document.addEventListener("DOMContentLoaded", function () {
+    // Set default selected date (first day or URL parameter)
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateParam = urlParams.get('date');
+
+    if (dateParam) {
+        const dateElements = document.querySelectorAll('.carousel-cell');
+        dateElements.forEach(el => {
+            if (el.getAttribute('data-date') === dateParam) {
+                el.style.background = "#df0e62";
+                el.classList.add('selected');
+                prevId = el.id.replace('day-', '');
+            }
+        });
+    } else {
+        const firstDayElement = document.querySelector('.carousel-cell');
+        if (firstDayElement) {
+            const firstDayId = firstDayElement.id.replace('day-', '');
+            firstDayElement.style.background = "#df0e62";
+            firstDayElement.classList.add('selected');
+            prevId = firstDayId;
+        }
+    }
+
+    // Initialize button state
+    updateContinueButton();
+
+    // Setup event listeners for any existing showtime buttons
+    const showtimeButtons = document.querySelectorAll('.screen-time');
+    showtimeButtons.forEach(button => {
+        if (!button.disabled) {
+            const showtimeId = button.id.replace('showtime-', '');
+            button.addEventListener('click', () => selectShowtime(showtimeId));
+        }
+    });
+});
+  </script>
+  <script src="https://npmcdn.com/flickity@2/dist/flickity.pkgd.js"></script>
+  <script type="text/javascript"
+    src='https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js'></script>
+  <script type="text/javascript" src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+  <script src="{% static 'js/theme-change.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/ticket-booking.js' %}"></script>
+
+ 
+  <script src="{% static 'seat_selection/scripts.js' %}"></script>
+</body>
+
+</html>

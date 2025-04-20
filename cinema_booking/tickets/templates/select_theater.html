@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chọn rạp chiếu - FimTikit{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Chọn rạp chiếu</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-4">Vui lòng chọn rạp chiếu để tiếp tục sử dụng dịch vụ.</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group mb-4">
+                            <label for="province">Tỉnh/ Thành phố:</label>
+                            <select class="form-control" id="province" name="province" required>
+                                <option value="">Chọn Tỉnh/ Thành phố</option>
+                                {% regroup theaters by get_province as province_list %}
+                                {% for province in province_list %}
+                                <option value="{{ province.grouper }}">{{ province.grouper }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="theater">Tên rạp:</label>
+                            <select class="form-control" id="theater" name="theater" required>
+                                <option value="">Chọn rạp</option>
+                                {% for theater in theaters %}
+                                <option value="{{ theater.id }}" data-province="{{ theater.get_province }}" style="display: none;">{{ theater.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Xác nhận</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('province').addEventListener('change', function() {
+    const selectedProvince = this.value;
+    const theaterSelect = document.getElementById('theater');
+    const theaters = theaterSelect.getElementsByTagName('option');
+    
+    for (let theater of theaters) {
+        if (theater.value === '') {
+            theater.style.display = '';  // Always show the default option
+            continue;
+        }
+        
+        if (theater.getAttribute('data-province') === selectedProvince) {
+            theater.style.display = '';
+        } else {
+            theater.style.display = 'none';
+        }
+    }
+    
+    // Reset theater selection
+    theaterSelect.value = '';
+});
+</script>
+{% endblock %} 
